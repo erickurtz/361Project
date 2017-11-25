@@ -1,3 +1,4 @@
+import java.io.*;
 public class Simulator {
 	private static final int SUB_INDEX = 2; 
 	
@@ -14,7 +15,8 @@ public class Simulator {
 		this.quant = q; 
 	}
 
-	
+	//Helper function to read lines 
+	//produces Strings --> Ints 
 	public int readInteger(String inputArr[], int index) {
 		return Integer.parseInt(inputArr[index].
 				substring(SUB_INDEX, inputArr[index].length()));
@@ -22,12 +24,17 @@ public class Simulator {
 		
 	}
 	
-	public void parseFile(String filename) {
+	
+	//Parses the line of the file
+	//Consumes: line -> line denoting what to do 
+	//Produces: Nothing, adjusts Simulation based on input
+	
+	
+	public void parseLine(String line) {
 		//read file 
 		//get next line 
 		//Suppose next line = string S 
 	
-		String line = ""; 
 		String [] words = line.split(" ");
 		String firstChar = words[0]; 
 		
@@ -38,6 +45,7 @@ public class Simulator {
 			int serial = readInteger(words, 3);
 			int quant = readInteger(words, 4);
 			
+			System.out.println("Initializing Simulation. Time: " + time + " Memory: " +  " Serial Devices: " + serial + " Quant: " + quant);
 			
 			break;
 		case "A": 
@@ -49,6 +57,8 @@ public class Simulator {
 			int runTime = readInteger(words, 5);
 			int priority = readInteger(words, 6);
 			
+			System.out.println("Adding Job. Time arrived: " + timeArrive + " Job Num: " + jobNum + " Mem req'd: "
+					+ memReq + " Serial Devices used " + serDevUse + " Runtime: " + runTime + " Priority: " + priority);
 			//constr here 
 			//add to queue (?) 
 			
@@ -57,15 +67,22 @@ public class Simulator {
 			int timeReq = Integer.parseInt(words[1]);
 			int jobNumReq = readInteger(words, 2);
 			int devReqd = readInteger(words, 3);
+			
+			
+			System.out.println("Requesting devices. TimeReq: " + timeReq + " Job Num: " + jobNumReq + "Devices Req'd: " + devReqd);
 			break;
+			
 		case "L":
 			int timeRel = Integer.parseInt(words[1]);
 			int jobNumRel = readInteger(words, 2); 
 			int numDevReld = readInteger(words, 3);
+			
+			System.out.println("Releasing devices. Time Relased: " + timeRel + " Job Num: " + jobNumRel + " Num Devices: " + numDevReld);
 			break;
 		case "D": 
 			//display current system status (?)
 			int timeDis = Integer.parseInt(words[1]);
+			System.out.println("Simulation Display. Time displayed: " + timeDis);
 			//display current system params
 			break; 
 			
@@ -73,6 +90,27 @@ public class Simulator {
 		
 		}
 		
+		
+	}
+	
+	public static void main(String args[]) {
+		Simulator s1 = new Simulator(0,0,0,0); 
+		
+		String filename = "test.txt";
+		String line = null; 
+		
+		try { 
+			FileReader filereader = new FileReader(filename); 
+			BufferedReader bufferedReader = new BufferedReader(filereader); 
+			
+			while((line = bufferedReader.readLine()) != null) {
+				s1.parseLine(line);
+			}
+		}catch (FileNotFoundException ex){
+			System.out.println("File not found");
+		}catch (IOException ex) {
+			System.out.println("Error reading file"); 
+		}
 		
 	}
 }
