@@ -5,16 +5,20 @@ public class Job{
 	int arrivTime; 
 	int memReq; 
 	int dev; 
+	
+
 	int runTime; 
+	int jobNum; 
 	String currState; 
 	
-	public Job(int p, int a, int m, int d, int r) {
+	public Job(int p, int a, int m, int d, int r, int j) {
 		
 		this.priority = p; 
 		this.arrivTime = a;
 		this.memReq = m;
 		this.dev = d;
 		this. runTime = r; 
+		this.jobNum = j; 
 		this.currState = "None"; 
 	}
 
@@ -64,5 +68,13 @@ public class Job{
 	
 	public void setCurrState(String s) {
 		this.currState = s;
+	}
+	
+	public int getJobNum() {
+		return jobNum;
+	}
+
+	public void setJobNum(int jobNum) {
+		this.jobNum = jobNum;
 	}
 } 

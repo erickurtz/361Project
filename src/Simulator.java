@@ -32,93 +32,66 @@ public class Simulator {
 	LinkedList<Process> completeQueue = new LinkedList <Process>(); 
 	LinkedList<Process> deviceWaitQueue = new LinkedList<Process>();
 	Queue<Process> readyQueue = new LinkedList<Process>(); 
-	
+	Queue<Request> requestQueue = new LinkedList<Request>(); 
+	Queue<Request> releaseQueue = new LinkedList<Request>(); 
 	
 	public Simulator(int t, int mm, int ser, int q) {
 		
 		this.time = t; 
-		this.totalMem = mm; 
 		this.serialDev = ser; 
 		this.quant = q;
 		this.availMem = totalMem;
 	}
 
-	//Helper function to read lines 
-	//produces Strings --> Ints 
-	public int readInteger(String inputArr[], int index) {
-		return Integer.parseInt(inputArr[index].
-				substring(SUB_INDEX, inputArr[index].length()));
-		
-		
-	}
-	
+
 	
 	//Parses the line of the file
 	//Consumes: line -> line denoting what to do 
 	//Produces: Nothing, adjusts Simulation based on input
 	
 	
-	public void parseLine(String line) {
-	
-		String [] words = line.split(" ");
-		String firstChar = words[0]; 
+	public void requestDevices(Request r) {
 		
-		switch (firstChar) {
-		case "C": 
-			int time = Integer.parseInt(words[1]);
-			int mainMemory = readInteger(words, 2);
-			int serial = readInteger(words, 3);
-			int quant = readInteger(words, 4);
-			
-			System.out.println("Initializing Simulation. Time: " + time + " Memory: " +  " Serial Devices: " + serial + " Quant: " + quant);
-			
-			break;
-		case "A": 
-			//create job (constructor) 
-			int timeArrive = Integer.parseInt(words[1]); 
-			int jobNum = readInteger(words, 2);
-			int memReq = readInteger(words, 3);
-			int serDevUse = readInteger(words, 4); 
-			int runTime = readInteger(words, 5);
-			int priority = readInteger(words, 6);
-			
-			System.out.println("Adding Job. Time arrived: " + timeArrive + " Job Num: " + jobNum + " Mem req'd: "
-					+ memReq + " Serial Devices used " + serDevUse + " Runtime: " + runTime + " Priority: " + priority);
-			//constr here 
-			//add to queue (?) 
-			
-			break;
-		case "Q":
-			int timeReq = Integer.parseInt(words[1]);
-			int jobNumReq = readInteger(words, 2);
-			int devReqd = readInteger(words, 3);
-			
-			
-			System.out.println("Requesting devices. TimeReq: " + timeReq + " Job Num: " + jobNumReq + "Devices Req'd: " + devReqd);
-			break;
-			
-		case "L":
-			int timeRel = Integer.parseInt(words[1]);
-			int jobNumRel = readInteger(words, 2); 
-			int numDevReld = readInteger(words, 3);
-			
-			System.out.println("Releasing devices. Time Relased: " + timeRel + " Job Num: " + jobNumRel + " Num Devices: " + numDevReld);
-			break;
-		case "D": 
-			//display current system status (?)
-			int timeDis = Integer.parseInt(words[1]);
-			System.out.println("Simulation Display. Time displayed: " + timeDis);
-			//display current system params
-			break; 
-			
-			
 		
+		
+		
+		if(this.currProcess!= null && r.jobNumReq == this.currProcess.getAjob().jobNum) {
+			if(this.serialDev <= r.devReqd) {
+				this.currProcess.setCurrResources(this.currProcess.getCurrResources() + r.devReqd);
+				this.serialDev -= r.devReqd; 
+			}else {
+				System.out.println("Not enough devices available.");
+			}
+		}else {
+			System.out.println("Job not on CPU");
 		}
-		
-		
 	}
 	
-	
+	public void releaseDevices(Request r) {
+		Job j1 = null; 
+		if(this.currProcess != null && r.jobNumReq == this.currProcess.getAjob().getJobNum()) {
+			j1 = this.currProcess.getAjob(); 
+		}else { 
+			for(Process p : readyQueue) {
+				if(p.getAjob().getJobNum() == r.jobNumReq) {
+					j1 = p.getAjob(); 
+					break; 
+				}
+			} 
+			for(Process p: deviceWaitQueue) {
+				if(p.getAjob().getJobNum() == r.jobNumReq) {
+					j1 = p.getAjob(); 
+					break; 
+				}
+			}	
+		}
+		if(j1 != null) {
+			j1.setDev(r.devReqd);
+			this.serialDev+= r.devReqd;
+		}else {
+			System.out.println("Error: Process not found. Cannot Release devices");
+		}
+	}
 	
 	
 	public void inputJob(Job j) {
@@ -150,9 +123,9 @@ public class Simulator {
 		currProcess.getAjob().setCurrState(DONE);
 		this.availMem+= currProcess.getCurrMem(); 
 		this.serialDev+= currProcess.getCurrResources();
-		
-		
 	}
+	
+	
 	
 	public void checkWaitQueue() {
 		
@@ -169,22 +142,47 @@ public class Simulator {
 			}
 		}
 	}
+	
+	public void checkRequestQueue() {
+		for (Request r: requestQueue) {
+			if (this.time <= r.timeReq) {
+				this.requestDevices(r);
+				this.requestQueue.remove(r);
+			}
+		}
+	}
+	
+	public void checkReleaseQueue() {
+		for (Request r: releaseQueue) {
+			if (this.time <= r.timeReq) {
+				this.releaseDevices(r);
+				this.requestQueue.remove(r);
+			}
+		}
+	}
+	
+	//Todo: handle process scheduling in round robin way 
+	//implement Bankers algorithm 
+	
 
-	public void onTick() {
+	public void onTick(String line) {
 		//handle internal events first
-		this.time++; 
-		if (this.currProcess != null) 
+		checkRequestQueue(); 
+		checkReleaseQueue(); 
+		this.time++;
+
+		if (this.currProcess != null) {
 			this.currProcess.timeRemaining--; //for the last cycle...
 
 		
-		if (this.currProcess.timeRemaining == 0) {
-			deallocateProcess(); 
-			checkWaitQueue(); 
-			checkHoldQueues(); 
-			this.currProcess = this.readyQueue.remove(); 
+			if (this.currProcess.timeRemaining == 0) {
+				deallocateProcess(); 
+				checkWaitQueue(); 
+				checkHoldQueues(); 
+				this.currProcess = this.readyQueue.remove(); 
 			
+			}
 		}
-		
 		
 		for (Job j : submitQueue) {
 			if (j.getArrivTime() == this.time) {
@@ -200,28 +198,9 @@ public class Simulator {
 				return o1.runTime-o2.runTime;
 			}
 			
-		});		
-	}
-	
-	
-	public static void main(String args[]) {
-		Simulator s1 = new Simulator(0,0,0,0); 
-		
-		String filename = "test.txt";
-		String line = null; 
-		
-		try { 
-			FileReader filereader = new FileReader(filename); 
-			BufferedReader bufferedReader = new BufferedReader(filereader); 
-			
-			while((line = bufferedReader.readLine()) != null) {
-				s1.parseLine(line);
-			}
-		}catch (FileNotFoundException ex){
-			System.out.println("File not found");
-		}catch (IOException ex) {
-			System.out.println("Error reading file"); 
-		}
+		});
 		
 	}
+	
+
 }
