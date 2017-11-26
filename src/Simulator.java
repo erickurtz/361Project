@@ -1,18 +1,30 @@
 import java.io.*;
+import java.util.LinkedList;
+import java.util.List;
 public class Simulator {
 	private static final int SUB_INDEX = 2; 
 	
 	int time; 
-	int mainMem;
+	int totalMem;
 	int serial;
 	int quant; 
+	int availMem;
+	Process currProcess = null; 
+	LinkedList<Job> allJobs = new LinkedList<Job>(); 
+	LinkedList<Job> firstHoldQueue = new LinkedList<Job>(); 
+	LinkedList<Job> secondHoldQueue = new LinkedList<Job>(); 
+	LinkedList<Process> completeQueue = new LinkedList <Process>(); 
+	LinkedList<Process> deviceWaitQueue = new LinkedList<Process>();
+	LinkedList<Process> readyQueue = new LinkedList<Process>(); 
+	
 	
 	public Simulator(int t, int mm, int ser, int q) {
 		
 		this.time = t; 
-		this.mainMem = mm; 
+		this.totalMem = mm; 
 		this.serial = ser; 
-		this.quant = q; 
+		this.quant = q;
+		this.availMem = totalMem;
 	}
 
 	//Helper function to read lines 
@@ -31,9 +43,6 @@ public class Simulator {
 	
 	
 	public void parseLine(String line) {
-		//read file 
-		//get next line 
-		//Suppose next line = string S 
 	
 		String [] words = line.split(" ");
 		String firstChar = words[0]; 
@@ -89,6 +98,15 @@ public class Simulator {
 			
 		
 		}
+		
+		
+	}
+	
+	//run for every tick of the clock 
+	
+	public void onTick() {
+		//get next line
+		
 		
 		
 	}

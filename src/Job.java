@@ -1,11 +1,12 @@
 
-public class Job {
+public class Job{
 
 	int priority; 
 	int arrivTime; 
 	int memReq; 
 	int dev; 
 	int runTime; 
+	String currState; 
 	
 	public Job(int p, int a, int m, int d, int r) {
 		
@@ -14,8 +15,54 @@ public class Job {
 		this.memReq = m;
 		this.dev = d;
 		this. runTime = r; 
+		this.currState = "None"; 
+	}
+
+	public int getPriority() {
+		return priority;
+	}
+
+	public void setPriority(int priority) {
+		this.priority = priority;
+	}
+
+	public int getArrivTime() {
+		return arrivTime;
+	}
+
+	public void setArrivTime(int arrivTime) {
+		this.arrivTime = arrivTime;
+	}
+
+	public int getMemReq() {
+		return memReq;
+	}
+
+	public void setMemReq(int memReq) {
+		this.memReq = memReq;
+	}
+
+	public int getDev() {
+		return dev;
+	}
+
+	public void setDev(int dev) {
+		this.dev = dev;
+	}
+
+	public int getRunTime() {
+		return runTime;
+	}
+
+	public void setRunTime(int runTime) {
+		this.runTime = runTime;
 	}
 	
+	public String getCurrState() {
+		return this.currState; 
+	}
 	
-	
+	public void setCurrState(String s) {
+		this.currState = s;
+	}
 } 
