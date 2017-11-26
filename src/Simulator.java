@@ -5,11 +5,23 @@ import java.util.LinkedList;
 import java.util.*;
 
 public class Simulator {
-	private static final int SUB_INDEX = 2; 
+	private static final int SUB_INDEX = 2;
+	private static final int P1 = 1; 
+	private static final int P2 = 2; 
+	
+	//State constants for consistency 
+	private static final String INP = "InputQueue"; 
+	private static final String HQ1 =  "HoldQueue1";
+	private static final String HQ2 = "HoldQueue2"; 
+	private static final String REJ = "Rejected"; 
+	private static final String RED = "ReadyQueue (Proc)"; 
+	private static final String WAIT = "WaitQueue(Proc)"; 
+	private static final String RUN = "Running(Proc)"; 
+	private static final String DONE = "CompleteQueue"; 
 	
 	int time; 
 	int totalMem;
-	int serial;
+	int serialDev;
 	int quant; 
 	int availMem;
 	Process currProcess = null; 
@@ -19,14 +31,14 @@ public class Simulator {
 	LinkedList<Job> secondHoldQueue = new LinkedList<Job>(); 
 	LinkedList<Process> completeQueue = new LinkedList <Process>(); 
 	LinkedList<Process> deviceWaitQueue = new LinkedList<Process>();
-	LinkedList<Process> readyQueue = new LinkedList<Process>(); 
+	Queue<Process> readyQueue = new LinkedList<Process>(); 
 	
 	
 	public Simulator(int t, int mm, int ser, int q) {
 		
 		this.time = t; 
 		this.totalMem = mm; 
-		this.serial = ser; 
+		this.serialDev = ser; 
 		this.quant = q;
 		this.availMem = totalMem;
 	}
@@ -106,16 +118,80 @@ public class Simulator {
 		
 	}
 	
-	//run for every tick of the clock 
 	
+	
+	
+	public void inputJob(Job j) {
+		 if (j.priority == P1) {
+			this.firstHoldQueue.add(j);
+			j.setCurrState(HQ1);
+			
+		}else {
+			this.secondHoldQueue.add(j); 
+			j.setCurrState(HQ2);
+		}
+	}
+	
+	
+	public void checkHoldQueues() {
+		for(Job j : this.firstHoldQueue) {
+			if (this.availMem >= j.memReq) {
+				this.availMem-= j.memReq; 
+				j.setCurrState(WAIT);
+				this.deviceWaitQueue.add(new Process(j)); 
+				checkWaitQueue(); 
+			}
+		}
+		
+	}
+	
+	
+	public void deallocateProcess() {
+		currProcess.getAjob().setCurrState(DONE);
+		this.availMem+= currProcess.getCurrMem(); 
+		this.serialDev+= currProcess.getCurrResources();
+		
+		
+	}
+	
+	public void checkWaitQueue() {
+		
+		for (Process p : this.deviceWaitQueue) {
+			if(p.getAjob().getDev() <= this.serialDev) {
+				
+				int diff = p.getAjob().getMemReq() 
+						- p.getCurrResources();
+				p.setCurrResources(diff);
+				this.serialDev-=diff; 
+				this.readyQueue.add(p);
+				p.getAjob().setCurrState(RED);
+				
+			}
+		}
+	}
 
 	public void onTick() {
-		//handle internal events first 
+		//handle internal events first
 		this.time++; 
 		if (this.currProcess != null) 
-			this.currProcess.timeRemaining--; 
+			this.currProcess.timeRemaining--; //for the last cycle...
+
 		
-		//sort the first Holdqueue in order to get it in SJF
+		if (this.currProcess.timeRemaining == 0) {
+			deallocateProcess(); 
+			checkWaitQueue(); 
+			checkHoldQueues(); 
+			this.currProcess = this.readyQueue.remove(); 
+			
+		}
+		
+		
+		for (Job j : submitQueue) {
+			if (j.getArrivTime() == this.time) {
+				inputJob(j);
+			}
+					
+		}
 		Collections.sort(firstHoldQueue, new Comparator <Job> () {
 
 			@Override
@@ -124,15 +200,9 @@ public class Simulator {
 				return o1.runTime-o2.runTime;
 			}
 			
-		});
-		
-		//it's unnecessary to sort the other list -> jobs will 
-		//simply be added to the front of the queue. 
-		
-		
-		
-		
+		});		
 	}
+	
 	
 	public static void main(String args[]) {
 		Simulator s1 = new Simulator(0,0,0,0); 

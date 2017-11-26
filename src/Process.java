@@ -4,11 +4,29 @@ public class Process {
 	Job ajob; 
 	int timeRemaining; 
 	int currResources; 
+	int currMem;
 	
 	public Process(Job j) {
 		this.ajob = j; 
+		this.currMem = 0;
 		this.currResources = 0; 
 		this.timeRemaining = j.getRunTime(); 
+	}
+
+	public int getCurrResources() {
+		return currResources;
+	}
+
+	public void setCurrResources(int currResources) {
+		this.currResources = currResources;
+	}
+
+	public int getCurrMem() {
+		return currMem;
+	}
+
+	public void setCurrMem(int currMem) {
+		this.currMem = currMem;
 	}
 
 	public Job getAjob() {
