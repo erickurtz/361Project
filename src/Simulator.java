@@ -1,6 +1,9 @@
 import java.io.*;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
+
 public class Simulator {
 	private static final int SUB_INDEX = 2; 
 	
@@ -10,6 +13,7 @@ public class Simulator {
 	int quant; 
 	int availMem;
 	Process currProcess = null; 
+	LinkedList<Job> submitQueue = new LinkedList<Job>(); 
 	LinkedList<Job> allJobs = new LinkedList<Job>(); 
 	LinkedList<Job> firstHoldQueue = new LinkedList<Job>(); 
 	LinkedList<Job> secondHoldQueue = new LinkedList<Job>(); 
@@ -104,8 +108,27 @@ public class Simulator {
 	
 	//run for every tick of the clock 
 	
+
 	public void onTick() {
-		//get next line
+		//handle internal events first 
+		this.time++; 
+		if (this.currProcess != null) 
+			this.currProcess.timeRemaining--; 
+		
+		//sort the first Holdqueue in order to get it in SJF
+		Collections.sort(firstHoldQueue, new Comparator <Job> () {
+
+			@Override
+			public int compare(Job o1, Job o2) {
+				
+				return o1.runTime-o2.runTime;
+			}
+			
+		});
+		
+		//it's unnecessary to sort the other list -> jobs will 
+		//simply be added to the front of the queue. 
+		
 		
 		
 		
