@@ -1,3 +1,7 @@
+//@Author Eric 
+
+//TODO: Bankers algorithm, RoundRobin algorithm to put process on CPU. 
+
 import java.io.*;
 import java.util.Collections;
 import java.util.Comparator;
@@ -5,7 +9,7 @@ import java.util.LinkedList;
 import java.util.*;
 
 public class Simulator {
-	private static final int SUB_INDEX = 2;
+	private static final int SUB_INDEX = 2; 
 	private static final int P1 = 1; 
 	private static final int P2 = 2; 
 	
@@ -45,20 +49,16 @@ public class Simulator {
 
 
 	
-	//Parses the line of the file
-	//Consumes: line -> line denoting what to do 
-	//Produces: Nothing, adjusts Simulation based on input
-	
-	
+	//RequestDevices: Request --> void
+	//Consumes: Request r, the request being made
+	//Produces: void 
+	//Takes in a request. checks whether corresponding process is on CPU. if so, fulfills request. 
 	public void requestDevices(Request r) {
-		
-		
-		
-		
 		if(this.currProcess!= null && r.jobNumReq == this.currProcess.getAjob().jobNum) {
 			if(this.serialDev <= r.devReqd) {
 				this.currProcess.setCurrResources(this.currProcess.getCurrResources() + r.devReqd);
 				this.serialDev -= r.devReqd; 
+				//need to remove from queue? check
 			}else {
 				System.out.println("Not enough devices available.");
 			}
@@ -67,6 +67,12 @@ public class Simulator {
 		}
 	}
 	
+	
+	//ReleaseDevices: Request --> void
+	//Consumes: Request r, the request being made
+	//Produces: void 
+	//Takes in a request. Finds corresponding job based on jobNum of request. Removes resources \
+	//if job is found.
 	public void releaseDevices(Request r) {
 		Job j1 = null; 
 		if(this.currProcess != null && r.jobNumReq == this.currProcess.getAjob().getJobNum()) {
@@ -93,7 +99,10 @@ public class Simulator {
 		}
 	}
 	
-	
+	//inputJob: Job j --> void 
+	//consumes: Job j, job to be input
+	//produces: void
+	//Inputs a job in one of two hold queues.
 	public void inputJob(Job j) {
 		 if (j.priority == P1) {
 			this.firstHoldQueue.add(j);
@@ -105,8 +114,18 @@ public class Simulator {
 		}
 	}
 	
+	//checkHoldQueues
+	//consumes: void
+	//produces: void 
+	//Checks hold queues for whether jobs are ready to be added
+	//Checks first queue, then second. 
 	
-	public void checkHoldQueues() {
+	//IMPORTANT - If first job in queue is not able to be added, should the second job be added if
+	//there is enough memory? PDF does not say, or I don't see it. 
+	//Code is written as if this is the case.
+	 
+	void checkHoldQueues() {
+		//check first
 		for(Job j : this.firstHoldQueue) {
 			if (this.availMem >= j.memReq) {
 				this.availMem-= j.memReq; 
@@ -115,10 +134,22 @@ public class Simulator {
 				checkWaitQueue(); 
 			}
 		}
-		
+		//check second
+		for (Job j: this.secondHoldQueue) {
+			if (this.availMem >= j.memReq) {
+				this.availMem-= j.memReq; 
+				j.setCurrState(WAIT);
+				this.deviceWaitQueue.add(new Process(j)); 
+				checkWaitQueue(); 
+			}
+		}
 	}
 	
 	
+	//deallocateProcess: void -> void
+	//consumes: void 
+	//produces: void
+	//Deallocates the process on the CPU. 
 	public void deallocateProcess() {
 		currProcess.getAjob().setCurrState(DONE);
 		this.availMem+= currProcess.getCurrMem(); 
@@ -126,6 +157,10 @@ public class Simulator {
 	}
 	
 	
+	//checkWaitQueue: void --> void
+	//consumes: void 
+	//produces: void 
+	//checks the waitQueue if there are enough resources to add to readyQueue
 	
 	public void checkWaitQueue() {
 		
@@ -143,6 +178,11 @@ public class Simulator {
 		}
 	}
 	
+	//checkRequestQueue: void -> void 
+	//consumes: void 
+	//produces: void 
+	//checks requestQueue for requests at specific time.
+	
 	public void checkRequestQueue() {
 		for (Request r: requestQueue) {
 			if (this.time <= r.timeReq) {
@@ -151,6 +191,11 @@ public class Simulator {
 			}
 		}
 	}
+	
+	//checkReleaseQueue: void -> void 
+	//consumes: void 
+	//produces: void 
+	//checks releaseQueue for requests at specific time.
 	
 	public void checkReleaseQueue() {
 		for (Request r: releaseQueue) {
@@ -164,6 +209,10 @@ public class Simulator {
 	//Todo: handle process scheduling in round robin way 
 	//implement Bankers algorithm 
 	
+	//onTick: void --> void 
+	//consumes: void
+	//produces: void 
+	//To be run on every tick of the clock.
 
 	public void onTick(String line) {
 		//handle internal events first

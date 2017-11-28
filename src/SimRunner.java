@@ -63,7 +63,10 @@ public class SimRunner {
 		
 	}
 	
-	
+	//parseLine: Line --> void 
+	//Consumes: String line (the line to be consumed
+	//Produces: void 
+	//Adjusts the simulator based on the line of the given file.
 	public void parseLine(String line) {
 		
 		if(this.s1 != null) {
@@ -101,8 +104,7 @@ public class SimRunner {
 			
 			System.out.println("Adding Job. Time arrived: " + timeArrive + " Job Num: " + jobNum + " Mem req'd: "
 					+ memReq + " Serial Devices used " + serDevUse + " Runtime: " + runTime + " Priority: " + priority);
-			//constr here 
-			//add to queue (?) 
+
 			
 			break;
 		case "Q":
