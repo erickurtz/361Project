@@ -98,9 +98,7 @@ public class SimRunner {
 			int priority = readInteger(words, 6);
 			
 			Job currJob = new Job(priority, timeArrive, memReq, serDevUse, runTime, jobNum); 
-			currJob.setCurrState(INP);
-			this.s1.allJobs.add(currJob);
-			this.s1.submitQueue.add(currJob);
+			this.s1.addJob(currJob);
 			
 			System.out.println("Adding Job. Time arrived: " + timeArrive + " Job Num: " + jobNum + " Mem req'd: "
 					+ memReq + " Serial Devices used " + serDevUse + " Runtime: " + runTime + " Priority: " + priority);

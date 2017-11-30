@@ -66,8 +66,8 @@ public class Job{
 		return this.currState; 
 	}
 	
-	public void setCurrState(String s) {
-		this.currState = s;
+	public void setCurrState(String s, int time) {
+		this.currState = s + "At time: " + time;
 	}
 	
 	public int getJobNum() {

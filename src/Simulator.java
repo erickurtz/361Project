@@ -28,6 +28,7 @@ public class Simulator {
 	int serialDev;
 	int quant; 
 	int availMem;
+	
 	Process currProcess = null; 
 	LinkedList<Job> submitQueue = new LinkedList<Job>(); 
 	LinkedList<Job> allJobs = new LinkedList<Job>(); 
@@ -44,7 +45,8 @@ public class Simulator {
 		this.time = t; 
 		this.serialDev = ser; 
 		this.quant = q;
-		this.availMem = totalMem;
+		this.availMem = mm;
+		this.totalMem = mm; 
 	}
 
 
@@ -104,13 +106,20 @@ public class Simulator {
 	//produces: void
 	//Inputs a job in one of two hold queues.
 	public void inputJob(Job j) {
-		 if (j.priority == P1) {
+		
+		if (j.getMemReq() <= this.availMem) {
+			this.availMem-= j.memReq; 
+			j.setCurrState(WAIT,this.time);
+			this.deviceWaitQueue.add(new Process(j)); 
+			checkWaitQueue();
+			 
+		}else if (j.priority == P1) {
 			this.firstHoldQueue.add(j);
-			j.setCurrState(HQ1);
+			j.setCurrState(HQ1,this.time);
 			
 		}else {
 			this.secondHoldQueue.add(j); 
-			j.setCurrState(HQ2);
+			j.setCurrState(HQ2,this.time);
 		}
 	}
 	
@@ -126,21 +135,34 @@ public class Simulator {
 	 
 	void checkHoldQueues() {
 		//check first
-		for(Job j : this.firstHoldQueue) {
+		boolean reject1 = false;
+		
+		Job j = this.firstHoldQueue.peekFirst(); 
+		while(j!= null && !reject1) {
 			if (this.availMem >= j.memReq) {
 				this.availMem-= j.memReq; 
-				j.setCurrState(WAIT);
+				j.setCurrState(WAIT,this.time);
 				this.deviceWaitQueue.add(new Process(j)); 
+				this.firstHoldQueue.removeFirst();
+				j = this.firstHoldQueue.peekFirst(); 
 				checkWaitQueue(); 
+			}else {
+				reject1 = true; 
 			}
 		}
 		//check second
-		for (Job j: this.secondHoldQueue) {
+		boolean reject2 = false; 
+		j = this.secondHoldQueue.peekFirst(); 
+		while(j!= null && !reject2) {
 			if (this.availMem >= j.memReq) {
 				this.availMem-= j.memReq; 
-				j.setCurrState(WAIT);
-				this.deviceWaitQueue.add(new Process(j)); 
+				j.setCurrState(WAIT,this.time);
+				this.deviceWaitQueue.add(new Process(j));
+				this.secondHoldQueue.remove(j); 
+				j = this.firstHoldQueue.peekFirst();
 				checkWaitQueue(); 
+			}else {
+				reject2 = true; 
 			}
 		}
 	}
@@ -149,9 +171,8 @@ public class Simulator {
 	//deallocateProcess: void -> void
 	//consumes: void 
 	//produces: void
-	//Deallocates the process on the CPU. 
 	public void deallocateProcess() {
-		currProcess.getAjob().setCurrState(DONE);
+		currProcess.getAjob().setCurrState(DONE,this.time);
 		this.availMem+= currProcess.getCurrMem(); 
 		this.serialDev+= currProcess.getCurrResources();
 	}
@@ -172,7 +193,7 @@ public class Simulator {
 				p.setCurrResources(diff);
 				this.serialDev-=diff; 
 				this.readyQueue.add(p);
-				p.getAjob().setCurrState(RED);
+				p.getAjob().setCurrState(RED, this.time);
 				
 			}
 		}
@@ -209,6 +230,29 @@ public class Simulator {
 	//Todo: handle process scheduling in round robin way 
 	//implement Bankers algorithm 
 	
+
+	//addJob: Job -> void 
+	//adds a job if there is space 
+	
+	public void addJob(Job j) { 
+		this.allJobs.add(j);
+		if(j.getMemReq() > this.totalMem) {
+			j.setCurrState(REJ, this.time);
+		}else {
+			j.setCurrState(INP, this.time);
+			this.submitQueue.add(j);
+		}
+	}
+	
+	public void finishProcess(Process p) {
+		deallocateProcess(); 
+		this.completeQueue.add(p);
+		p.getAjob().setCurrState(DONE, this.time);
+		this.currProcess = this.readyQueue.remove(); 
+	
+	}
+	
+	
 	//onTick: void --> void 
 	//consumes: void
 	//produces: void 
@@ -218,18 +262,16 @@ public class Simulator {
 		//handle internal events first
 		checkRequestQueue(); 
 		checkReleaseQueue(); 
-		this.time++;
+		
 
 		if (this.currProcess != null) {
 			this.currProcess.timeRemaining--; //for the last cycle...
 
 		
 			if (this.currProcess.timeRemaining == 0) {
-				deallocateProcess(); 
+				finishProcess(currProcess); 
 				checkWaitQueue(); 
 				checkHoldQueues(); 
-				this.currProcess = this.readyQueue.remove(); 
-			
 			}
 		}
 		
@@ -248,6 +290,8 @@ public class Simulator {
 			}
 			
 		});
+		
+		this.time++;
 		
 	}
 	
