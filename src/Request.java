@@ -16,6 +16,9 @@ public class Request implements Comparable<Request>{
 	}
 
 	
+	public int getTime() {
+		return this.timeReq; 
+	}
 	
 	
 }

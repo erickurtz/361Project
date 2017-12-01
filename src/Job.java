@@ -1,8 +1,8 @@
 
-public class Job{
+public class Job {
 
 	int priority; 
-	int arrivTime; 
+	int time; 
 	int memReq; 
 	int dev; 
 	
@@ -14,7 +14,7 @@ public class Job{
 	public Job(int p, int a, int m, int d, int r, int j) {
 		
 		this.priority = p; 
-		this.arrivTime = a;
+		this.time = a;
 		this.memReq = m;
 		this.dev = d;
 		this. runTime = r; 
@@ -30,12 +30,12 @@ public class Job{
 		this.priority = priority;
 	}
 
-	public int getArrivTime() {
-		return arrivTime;
+	public int getTime() {
+		return time;
 	}
 
-	public void setArrivTime(int arrivTime) {
-		this.arrivTime = arrivTime;
+	public void setTime(int arrivTime) {
+		this.time = arrivTime;
 	}
 
 	public int getMemReq() {
@@ -77,4 +77,6 @@ public class Job{
 	public void setJobNum(int jobNum) {
 		this.jobNum = jobNum;
 	}
+
+
 } 

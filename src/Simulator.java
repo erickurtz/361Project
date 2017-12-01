@@ -65,9 +65,11 @@ public class Simulator {
 				System.out.println("Not enough devices available.");
 			}
 		}else {
-			System.out.println("Job not on CPU");
+			this.requestQueue.add(r); //add request to be checked when the process is on the 
 		}
 	}
+	
+	
 	
 	
 	//ReleaseDevices: Request --> void
@@ -258,11 +260,8 @@ public class Simulator {
 	//produces: void 
 	//To be run on every tick of the clock.
 
-	public void onTick(String line) {
+	public void onTick() {
 		//handle internal events first
-		checkRequestQueue(); 
-		checkReleaseQueue(); 
-		
 
 		if (this.currProcess != null) {
 			this.currProcess.timeRemaining--; //for the last cycle...
@@ -272,15 +271,16 @@ public class Simulator {
 				finishProcess(currProcess); 
 				checkWaitQueue(); 
 				checkHoldQueues(); 
+			}else {
+				
+				//handle switching of processes, ROUND ROBIN ALG HERE
+				
 			}
 		}
 		
-		for (Job j : submitQueue) {
-			if (j.getArrivTime() == this.time) {
-				inputJob(j);
-			}
-					
-		}
+		
+	
+				
 		Collections.sort(firstHoldQueue, new Comparator <Job> () {
 
 			@Override
@@ -295,5 +295,88 @@ public class Simulator {
 		
 	}
 	
+	public int readInteger(String inputArr[], int index) {
+		return Integer.parseInt(inputArr[index].
+				substring(SUB_INDEX, inputArr[index].length()));
+		
+		
+	}
+	
+	public void parseInput(String s1) {
+		
+		String line = s1;  
+		String [] words = line.split(" ");
+		String firstChar = words[0]; 
+		
+		switch (firstChar) {
+		case "A": 
+			//create job (constructor) 
+			int timeArrive = Integer.parseInt(words[1]); 
+			int jobNum = readInteger(words, 2);
+			int memReq = readInteger(words, 3);
+			int serDevUse = readInteger(words, 4); 
+			int runTime = readInteger(words, 5);
+			int priority = readInteger(words, 6);
+		
+			Job currJob = new Job(priority, timeArrive, memReq, serDevUse, runTime, jobNum); 
+			
+			
+			this.inputJob(currJob);
+
+			System.out.println("Adding Job. Time arrived: " + timeArrive + " Job Num: " + jobNum + " Mem req'd: "
+				+ memReq + " Serial Devices used " + serDevUse + " Runtime: " + runTime + " Priority: " + priority);
+				
+		
+			break;	
+		case "Q":
+			int timeReq = Integer.parseInt(words[1]);
+			int jobNumReq = readInteger(words, 2);
+			int devReqd = readInteger(words, 3);
+			
+			Request r = new Request(timeReq, jobNumReq, devReqd); 
+			
+			//TRY TO VALIDATE REQUEST HERE. DONT PUT IN QUEUE. 
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			//BANKERS ALG?????????????
+			
+			
+			
+			this.requestDevices(r);
+			System.out.println("Requesting devices. TimeReq: " + timeReq + " Job Num: " + jobNumReq + " Devices Req'd: " + devReqd);
+			break;
+			
+		case "L":
+			int timeRel = Integer.parseInt(words[1]);
+			int jobNumRel = readInteger(words, 2); 
+			int numDevReld = readInteger(words, 3);
+			
+			this.releaseDevices(new Request(timeRel, jobNumRel,numDevReld));
+			System.out.println("Releasing devices. Time Relased: " + timeRel + " Job Num: " + jobNumRel + " Num Devices: " + numDevReld);
+			break;
+		case "D": 
+			//display current system status (?)
+			int timeDis = Integer.parseInt(words[1]);
+			
+			if(timeDis == 9999) {
+				
+				//dump contents 
+				//set s1 = null 
+			}else {
+				//don't do that, just print
+			}
+			//System.out.println("Simulation Display. Time displayed: " + timeDis);
+			//display current system params
+			break; 
+		}
+		
+	}
 
 }

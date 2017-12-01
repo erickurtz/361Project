@@ -12,6 +12,7 @@ public class SimRunner {
 	private static final int SUB_INDEX = 2;
 	private static final int P1 = 1; 
 	private static final int P2 = 2; 
+	private static final int END = 9999;
 	
 	//State constants for consistency 
 	private static final String INP = "InputQueue"; 
@@ -25,18 +26,34 @@ public class SimRunner {
 	
 	
 	Simulator s1 = null; 
-	
-	
+	int time; 
+	String currLine; 
 	public SimRunner(String filename) {
+		time = 0; 
+		currLine = ""; 
 		String line = null; 
 		try { 
 			FileReader filereader = new FileReader(filename); 
 			BufferedReader bufferedReader = new BufferedReader(filereader); 
 			
-			while((line = bufferedReader.readLine()) != null) {
-				if(s1 != null) {
-					s1.onTick(line); //if init, handle internal events first
-					this.parseLine(line); //then accept input (external events)
+			line = bufferedReader.readLine(); 
+			while((line != null)) {
+				if(this.time == END) {
+					this.parseLine(line);
+					break;
+				}
+				this.parseLine(line);
+				 if(s1 != null) {
+					if(this.time <= s1.time) {
+						s1.onTick(); 
+						s1.parseInput(currLine);
+						line = bufferedReader.readLine();
+						
+					}else {
+						System.out.println("Current time: " + this.s1.time + 
+								". Time of next input: " + time + ".");
+						s1.onTick(); //if init, handle internal events first
+					}
 				}else {
 					this.parseLine(line); //else parse the file to initialize the simulator
 				}
@@ -69,10 +86,6 @@ public class SimRunner {
 	//Adjusts the simulator based on the line of the given file.
 	public void parseLine(String line) {
 		
-		if(this.s1 != null) {
-			s1.onTick(line);
-		}
-		
 		String [] words = line.split(" ");
 		String firstChar = words[0]; 
 		
@@ -85,11 +98,11 @@ public class SimRunner {
 			
 			this.s1 = new Simulator (time, mainMemory, serial, quant);
 			
-			System.out.println("Initializing Simulation. Time: " + time + " Memory: " +  " Serial Devices: " + serial + " Quant: " + quant);
+			System.out.println("Initializing Simulation. Time: " + time + " Memory: " + mainMemory + 
+					" Serial Devices: " + serial + " Quant: " + quant);
 			
 			break;
-		case "A": 
-			//create job (constructor) 
+		case "A":
 			int timeArrive = Integer.parseInt(words[1]); 
 			int jobNum = readInteger(words, 2);
 			int memReq = readInteger(words, 3);
@@ -97,12 +110,13 @@ public class SimRunner {
 			int runTime = readInteger(words, 5);
 			int priority = readInteger(words, 6);
 			
-			Job currJob = new Job(priority, timeArrive, memReq, serDevUse, runTime, jobNum); 
-			this.s1.addJob(currJob);
+			//Job currJob = new Job(priority, timeArrive, memReq, serDevUse, runTime, jobNum); 
+			//this.s1.addJob(currJob);
 			
-			System.out.println("Adding Job. Time arrived: " + timeArrive + " Job Num: " + jobNum + " Mem req'd: "
-					+ memReq + " Serial Devices used " + serDevUse + " Runtime: " + runTime + " Priority: " + priority);
-
+			//System.out.println("Adding Job. Time arrived: " + timeArrive + " Job Num: " + jobNum + " Mem req'd: "
+			//		+ memReq + " Serial Devices used " + serDevUse + " Runtime: " + runTime + " Priority: " + priority);
+			this.time = timeArrive; 
+			this.currLine = line; 
 			
 			break;
 		case "Q":
@@ -110,8 +124,11 @@ public class SimRunner {
 			int jobNumReq = readInteger(words, 2);
 			int devReqd = readInteger(words, 3);
 			
-			s1.requestQueue.add(new Request(timeReq, jobNumReq, devReqd)); 
-			System.out.println("Requesting devices. TimeReq: " + timeReq + " Job Num: " + jobNumReq + "Devices Req'd: " + devReqd);
+			this.time = timeReq;
+			this.currLine = line; 
+			
+			//s1.requestQueue.add(new Request(timeReq, jobNumReq, devReqd)); 
+			//System.out.println("Requesting devices. TimeReq: " + timeReq + " Job Num: " + jobNumReq + "Devices Req'd: " + devReqd);
 			break;
 			
 		case "L":
@@ -119,17 +136,27 @@ public class SimRunner {
 			int jobNumRel = readInteger(words, 2); 
 			int numDevReld = readInteger(words, 3);
 			
-			System.out.println("Releasing devices. Time Relased: " + timeRel + " Job Num: " + jobNumRel + " Num Devices: " + numDevReld);
-			break;
+			this.time = timeRel; 
+			this.currLine = line; 
+			
+			//System.out.println("Releasing devices. Time Relased: " + timeRel + " Job Num: " + jobNumRel + " Num Devices: " + numDevReld);
+			//break;
 		case "D": 
 			//display current system status (?)
 			int timeDis = Integer.parseInt(words[1]);
 			
+			
+			this.time = timeDis; 
+			this.currLine = line; 
+			
 			if(timeDis == 9999) {
+				//System.out.println("Simulation Display. Time displayed: " + timeDis);
+			
 				
 				//dump contents 
 				//set s1 = null 
 			}else {
+				//System.out.println("Simulation Display. Time displayed: " + timeDis);
 				//don't do that, just print
 			}
 			System.out.println("Simulation Display. Time displayed: " + timeDis);
