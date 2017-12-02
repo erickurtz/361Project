@@ -1,5 +1,5 @@
 
-public class Process {
+public class Process implements Comparable<Process> {
 	
 	Job ajob; 
 	int timeRemaining; 
@@ -11,6 +11,10 @@ public class Process {
 		this.currMem = 0;
 		this.currResources = 0; 
 		this.timeRemaining = j.getRunTime(); 
+	}
+	
+	public int getResReqDiff() {
+		return this.getAjob().getDev() - this.currResources; 
 	}
 
 	public int getCurrResources() {
@@ -43,6 +47,16 @@ public class Process {
 
 	public void setTimeRemaining(int timeRemaining) {
 		this.timeRemaining = timeRemaining;
+	}
+
+	@Override
+	public int compareTo(Process o) {
+		// TODO Auto-generated method stub
+		return this.getAjob().getJobNum() - o.getAjob().getJobNum();
+	}
+	
+	public String toString() {
+		return "Process for " + this.getAjob().toString(); 
 	}
 
 }

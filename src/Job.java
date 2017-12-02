@@ -9,6 +9,7 @@ public class Job {
 
 	int runTime; 
 	int jobNum; 
+	int currStateTime; 
 	String currState; 
 	
 	public Job(int p, int a, int m, int d, int r, int j) {
@@ -19,7 +20,8 @@ public class Job {
 		this.dev = d;
 		this. runTime = r; 
 		this.jobNum = j; 
-		this.currState = "None"; 
+		this.currState = "None";
+		int currStatetime = 0; 
 	}
 
 	public int getPriority() {
@@ -67,7 +69,8 @@ public class Job {
 	}
 	
 	public void setCurrState(String s, int time) {
-		this.currState = s + "At time: " + time;
+		this.currState = s; 
+		this.currStateTime = time; 
 	}
 	
 	public int getJobNum() {
@@ -76,6 +79,12 @@ public class Job {
 
 	public void setJobNum(int jobNum) {
 		this.jobNum = jobNum;
+	}
+	
+	public String toString() {
+		return "Job # : " +  jobNum + ".  Current State: " + 
+				currState + " at time: " + this.currStateTime + ".\n ";
+		
 	}
 
 

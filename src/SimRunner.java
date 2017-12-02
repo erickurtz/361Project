@@ -14,8 +14,7 @@ public class SimRunner {
 	private static final int P2 = 2; 
 	private static final int END = 9999;
 	
-	//State constants for consistency 
-	private static final String INP = "InputQueue"; 
+	//State constants for consistency H
 	private static final String HQ1 =  "HoldQueue1";
 	private static final String HQ2 = "HoldQueue2"; 
 	private static final String REJ = "Rejected"; 
@@ -149,18 +148,23 @@ public class SimRunner {
 			this.time = timeDis; 
 			this.currLine = line; 
 			
+			System.out.println(s1.printState()); 
 			if(timeDis == 9999) {
 				//System.out.println("Simulation Display. Time displayed: " + timeDis);
 			
-				
+				//s1.printState();
+				//null pointer?? 
 				//dump contents 
 				//set s1 = null 
 			}else {
+				//s1.printState(); 
+				//Null Pointer, no idea why 
 				//System.out.println("Simulation Display. Time displayed: " + timeDis);
 				//don't do that, just print
+				System.out.println("Simulation Display. Time displayed: " + timeDis);
+				//display current system params
 			}
-			System.out.println("Simulation Display. Time displayed: " + timeDis);
-			//display current system params
+			
 			break; 
 			
 			
