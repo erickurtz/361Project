@@ -139,7 +139,7 @@ public class Simulator {
 		
 	
 			for(int j = 0; j< max[0].length; j++) {
-				need[0][j] = max[1][j] - allocation[1][j];
+				need[0][j] = max[0][j] - allocation[0][j];
 			}
 		
 
@@ -153,6 +153,8 @@ public class Simulator {
 		for(int i = 0; i <need[0].length; i++) {
 			if (devAfterReq <= need[0][i]) {
 				canSatisfy = true; 
+			}else {
+				canSatisfy = false; 
 			}
 		}
 		
@@ -199,7 +201,21 @@ public class Simulator {
 	}
 	
 	//ReadyToCPU void -> void 
-	// takes first process from ready and adds it to CPU 
+	// takes first process from ready and adds it to CPU, takes the Curr process if not null
+	//and puts it at back of readyQueue
+	
+	public void readyToCPU() {
+		if (this.currProcess != null){
+			this.currProcess.getAjob().setCurrState(RED, time); 
+			this.readyQueue.add(currProcess);
+		}
+		
+		Process p = readyQueue.remove(); 
+		p.getAjob().setCurrState(RUN, time);
+		this.currProcess = p; 
+		return; 
+		
+	}
 	
 	
 	//checkHoldQueues
