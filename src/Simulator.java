@@ -133,19 +133,19 @@ public class Simulator {
 	
 			for(int j = 0; j< max[1].length; j++) {
 				System.out.println("Row 1 Column " + j);
-				max[1][j] = this.deviceWaitQueue.get(j).getAjob().getDev(); 
+				max[0][j] = this.deviceWaitQueue.get(j).getAjob().getDev(); 
 			}
 		
 		
 	
 			for(int j = 0; j< max[1].length; j++) {
-				allocation[1][j] = this.deviceWaitQueue.get(j).getCurrResources();
+				allocation[0][j] = this.deviceWaitQueue.get(j).getCurrResources();
 				
 			}
 		
 	
 			for(int j = 0; j< max[1].length; j++) {
-				need[1][j] = max[1][j] - allocation[1][j];
+				need[0][j] = max[1][j] - allocation[1][j];
 			}
 		
 
@@ -181,20 +181,24 @@ public class Simulator {
 		
 		if(j.getMemReq()> this.totalMem || j.getDev() > this.totalSerDev) {
 			j.setCurrState(REJ, time);
+			System.out.println(j.toString() + "Rejected.");
 		}else if (j.getMemReq() <= this.availMem) {
 			this.availMem-= j.memReq; 
 			j.setCurrState(WAIT,this.time);
 			Process p = new Process(j);
 			this.deviceWaitQueue.add(p); 
 			this.allActiveProcess.add(p);
+			System.out.println(j.toString() + "Added to WaitQueue.");
 			checkWaitQueue();		 
 		}else if (j.priority == P1) {
 			this.firstHoldQueue.add(j);
 			j.setCurrState(HQ1,this.time);
+			System.out.println(j.toString() + "Added to HQ1.");
 			
 		}else {
 			this.secondHoldQueue.add(j); 
 			j.setCurrState(HQ2,this.time);
+			System.out.println( j.toString() + "Added to HQ1.");
 		}
 		this.allJobs.add(j); 
 		return; 
@@ -260,20 +264,30 @@ public class Simulator {
 	//produces: void 
 	//checks the waitQueue if there are enough resources to add to readyQueue
 	
+	public void checkCurrProcess() {
+		if (this.currProcess == null) {
+			this.currProcess = this.readyQueue.remove(); 
+			this.currProcess.getAjob().setCurrState(RUN, time);
+			System.out.println(currProcess);
+		}
+	}
+	
 	public void checkWaitQueue() {
 		
 		Iterator<Process> iter = deviceWaitQueue.iterator();
 		while (iter.hasNext()) {
 			Process p = iter.next();
 			if(p.getAjob().getDev() <= this.serialDev) {
+				System.out.println("Enough devices for " +p.toString() );
 				iter.remove();
 				int diff = p.getAjob().getMemReq() 
 						- p.getCurrResources();
 				p.setCurrResources(diff);
 				this.serialDev-=diff; 
 				this.readyQueue.add(p);
-
 				p.getAjob().setCurrState(RED, this.time);
+				System.out.println(p.toString() + "added.");
+				checkCurrProcess(); 
 				
 			}
 		}
