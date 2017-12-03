@@ -56,17 +56,11 @@ public class Simulator {
 	//Produces: void 
 	//Takes in a request. checks whether corresponding process is on CPU. if so, fulfills request. 
 	public void requestDevices(Request r) {
-		Process theProc = null; 
-		for(Process p: deviceWaitQueue) {
-			if(p.getAjob().getJobNum() == r.jobNumReq) {
-				theProc = p; 
-				break; 
-			}
-		}
+		Process theProc = currProcess; 
+	
 		
-		if(theProc == null) {
-			System.out.println("Process is not in waitQueue or has all"
-					+ "devices needed");
+		if(theProc == null || r.jobNumReq != currProcess.getAjob().getJobNum())  {
+			System.out.println("Process is not on CPU");
 			return; 
 		}
 		
@@ -122,7 +116,7 @@ public class Simulator {
 		if(currProcess == null) {
 			return true; //should never happen 
 		}
-		int totalProcesses = deviceWaitQueue.size();
+		int totalProcesses = this.allActiveProcess.size();
 		int available [] = {this.serialDev}; 
 		int[][] max = new int [NUM_RES_TYPE] [totalProcesses];
 		int [] [] allocation = new int [NUM_RES_TYPE] [totalProcesses];
@@ -131,20 +125,20 @@ public class Simulator {
 		
 		//NOTE: Writing as 2d arrays for "code maintainablity"
 	
-			for(int j = 0; j< max[1].length; j++) {
+			for(int j = 0; j< max[0].length; j++) {
 				System.out.println("Row 1 Column " + j);
-				max[0][j] = this.deviceWaitQueue.get(j).getAjob().getDev(); 
+				max[0][j] = this.allActiveProcess.get(j).getAjob().getDev(); 
 			}
 		
 		
 	
-			for(int j = 0; j< max[1].length; j++) {
-				allocation[0][j] = this.deviceWaitQueue.get(j).getCurrResources();
+			for(int j = 0; j< max[0].length; j++) {
+				allocation[0][j] = this.allActiveProcess.get(j).getCurrResources();
 				
 			}
 		
 	
-			for(int j = 0; j< max[1].length; j++) {
+			for(int j = 0; j< max[0].length; j++) {
 				need[0][j] = max[1][j] - allocation[1][j];
 			}
 		
@@ -185,7 +179,7 @@ public class Simulator {
 		}else if (j.getMemReq() <= this.availMem) {
 			this.availMem-= j.memReq; 
 			j.setCurrState(WAIT,this.time);
-			Process p = new Process(j);
+			Process p = new Process(j,time);
 			this.deviceWaitQueue.add(p); 
 			this.allActiveProcess.add(p);
 			System.out.println(j.toString() + "Added to WaitQueue.");
@@ -204,9 +198,13 @@ public class Simulator {
 		return; 
 	}
 	
+	//ReadyToCPU void -> void 
+	// takes first process from ready and adds it to CPU 
+	
+	
 	//checkHoldQueues
 	//consumes: void
-	//produces: void 
+	//produces: void 		this.entryTime = time; 
 	//Checks hold queues for whether jobs are ready to be added
 	//Checks first queue, then second. 
 	
@@ -223,7 +221,7 @@ public class Simulator {
 			if (this.availMem >= j.memReq) {
 				this.availMem-= j.memReq; 
 				j.setCurrState(WAIT,this.time);
-				this.deviceWaitQueue.add(new Process(j)); 
+				this.deviceWaitQueue.add(new Process(j,time)); 
 				this.firstHoldQueue.removeFirst();
 				j = this.firstHoldQueue.peekFirst(); 
 				checkWaitQueue(); 
@@ -238,9 +236,9 @@ public class Simulator {
 			if (this.availMem >= j.memReq) {
 				this.availMem-= j.memReq; 
 				j.setCurrState(WAIT,this.time);
-				this.deviceWaitQueue.add(new Process(j));
+				this.deviceWaitQueue.add(new Process(j,time));
 				this.secondHoldQueue.remove(j); 
-				j = this.firstHoldQueue.peekFirst();
+				j = this.secondHoldQueue.peekFirst();
 				checkWaitQueue(); 
 			}else {
 				reject2 = true; 
@@ -277,16 +275,17 @@ public class Simulator {
 		Iterator<Process> iter = deviceWaitQueue.iterator();
 		while (iter.hasNext()) {
 			Process p = iter.next();
+			System.out.println("Iterating over waitQueue. On "  + p);
 			if(p.getAjob().getDev() <= this.serialDev) {
 				System.out.println("Enough devices for " +p.toString() );
 				iter.remove();
-				int diff = p.getAjob().getMemReq() 
+				int diff = p.getAjob().getDev()
 						- p.getCurrResources();
 				p.setCurrResources(diff);
 				this.serialDev-=diff; 
 				this.readyQueue.add(p);
 				p.getAjob().setCurrState(RED, this.time);
-				System.out.println(p.toString() + "added.");
+				System.out.println(p.toString() + "added. Serial Devices left: " + this.serialDev);
 				checkCurrProcess(); 
 				
 			}
@@ -308,6 +307,7 @@ public class Simulator {
 		Process p1 = this.readyQueue.remove();
 		if(p1 == null) {
 			System.out.println("No ready processes to run");
+			this.currProcess = null; 
 		}else {
 			this.currProcess = p1; 
 		}
@@ -326,15 +326,13 @@ public class Simulator {
 			Process p = this.readyQueue.remove();
 			p.getAjob().setCurrState(RUN, time);
 			this.currProcess = p;
+			System.out.println("Added " + p + "to CPU.");
 		}else if (this.currProcess == null) {
 			System.out.println("Nothing on Process or in Ready Queue at time " + time);
 		}else if (this.currProcess != null) {
-		
-			this.currProcess.timeRemaining--; //for the last cycle...
-
-		
 			if (this.currProcess.timeRemaining <= 0) {
 				finishProcess(currProcess); 
+				System.out.println("Finished process: " + currProcess);
 			}else if (time % quant == 0){
 				this.currProcess.getAjob().setCurrState(RED, time);
 				this.readyQueue.add(currProcess);
@@ -344,6 +342,7 @@ public class Simulator {
 				//handle switching of processes, ROUND ROBIN ALG HERE
 				
 			}
+			this.currProcess.timeRemaining--; //for the last cycle...
 		}
 		
 		
@@ -394,12 +393,12 @@ public class Simulator {
 	}
 	
 	public int getWeightedTurnaround(Process p) {
-		return 0; 
+		return 0; //turnaround/runtime
 	}
 	
 	public int getTurnaround(Process p) {
 		
-		return 0; 
+		return p.getTimeRemaining(); 
 	}
 	
 	public String printState() {
@@ -468,12 +467,12 @@ public class Simulator {
 		
 			Job currJob = new Job(priority, timeArrive, memReq, serDevUse, runTime, jobNum); 
 			
-			
+			System.out.println("Adding Job. Time arrived: " + timeArrive + " Job Num: " + jobNum + " Mem req'd: "
+					+ memReq + " Serial Devices used " + serDevUse + " Runtime: " + runTime + " Priority: " + priority);
+					
 			this.inputJob(currJob);
 
-			System.out.println("Adding Job. Time arrived: " + timeArrive + " Job Num: " + jobNum + " Mem req'd: "
-				+ memReq + " Serial Devices used " + serDevUse + " Runtime: " + runTime + " Priority: " + priority);
-				
+			
 		
 			break;	
 		case "Q":
@@ -484,22 +483,28 @@ public class Simulator {
 			Request r = new Request(timeReq, jobNumReq, devReqd); 
 			
 			//TRY TO VALIDATE REQUEST HERE. DONT PUT IN QUEUE. 
+			System.out.println("Requesting devices. TimeReq: " 
+			+ timeReq + " Job Num: " + jobNumReq 
+			+ " Devices Req'd: " + devReqd);
 			
 			this.requestDevices(r);
 			
 
 			//BANKERS ALG?????????????
 
-			System.out.println("Requesting devices. TimeReq: " + timeReq + " Job Num: " + jobNumReq + " Devices Req'd: " + devReqd);
+			
 			break;
 			
 		case "L":
 			int timeRel = Integer.parseInt(words[1]);
 			int jobNumRel = readInteger(words, 2); 
 			int numDevReld = readInteger(words, 3);
-			
+			System.out.println("Releasing devices. Time Relased: " 
+					+ timeRel + " Job Num: " 
+					+ jobNumRel + " Num Devices: " 
+					+ numDevReld);
 			this.releaseDevices(new Request(timeRel, jobNumRel,numDevReld));
-			System.out.println("Releasing devices. Time Relased: " + timeRel + " Job Num: " + jobNumRel + " Num Devices: " + numDevReld);
+			
 			break;
 		case "D": 
 			//display current system status (?)

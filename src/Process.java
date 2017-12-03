@@ -5,12 +5,14 @@ public class Process implements Comparable<Process> {
 	int timeRemaining; 
 	int currResources; 
 	int currMem;
+	int entryTime; 
 	
-	public Process(Job j) {
+	public Process(Job j, int time) {
 		this.ajob = j; 
 		this.currMem = 0;
 		this.currResources = 0; 
-		this.timeRemaining = j.getRunTime(); 
+		this.timeRemaining = j.getRunTime();
+
 	}
 	
 	public int getResReqDiff() {
