@@ -71,7 +71,7 @@ public class Simulator {
 		}
 		
 		
-		if(runBankersAlg(r)) { //bankersAlg
+		if(true) { //bankersAlg
 			int tba = theProc.getAjob().getDev() 
 					- theProc.getCurrResources(); 
 			theProc.setCurrResources( theProc.getAjob().getDev());
@@ -132,6 +132,7 @@ public class Simulator {
 		//NOTE: Writing as 2d arrays for "code maintainablity"
 	
 			for(int j = 0; j< max[1].length; j++) {
+				System.out.println("Row 1 Column " + j);
 				max[1][j] = this.deviceWaitQueue.get(j).getAjob().getDev(); 
 			}
 		
@@ -261,14 +262,17 @@ public class Simulator {
 	
 	public void checkWaitQueue() {
 		
-		for (Process p : this.deviceWaitQueue) {
+		Iterator<Process> iter = deviceWaitQueue.iterator();
+		while (iter.hasNext()) {
+			Process p = iter.next();
 			if(p.getAjob().getDev() <= this.serialDev) {
-				
+				iter.remove();
 				int diff = p.getAjob().getMemReq() 
 						- p.getCurrResources();
 				p.setCurrResources(diff);
 				this.serialDev-=diff; 
 				this.readyQueue.add(p);
+
 				p.getAjob().setCurrState(RED, this.time);
 				
 			}
@@ -285,7 +289,14 @@ public class Simulator {
 		this.completeQueue.add(p);
 		this.allActiveProcess.remove(p); 
 		p.getAjob().setCurrState(DONE, this.time);
-		this.currProcess = this.readyQueue.remove(); 
+		this.checkWaitQueue();
+		this.checkHoldQueues();
+		Process p1 = this.readyQueue.remove();
+		if(p1 == null) {
+			System.out.println("No ready processes to run");
+		}else {
+			this.currProcess = p1; 
+		}
 	
 	}
 	
@@ -297,17 +308,25 @@ public class Simulator {
 
 	public void onTick() {
 		//handle internal events first
-
-		if (this.currProcess != null) {
+		if(this.currProcess == null && this.readyQueue.peek() != null) {
+			Process p = this.readyQueue.remove();
+			p.getAjob().setCurrState(RUN, time);
+			this.currProcess = p;
+		}else if (this.currProcess == null) {
+			System.out.println("Nothing on Process or in Ready Queue at time " + time);
+		}else if (this.currProcess != null) {
+		
 			this.currProcess.timeRemaining--; //for the last cycle...
 
 		
-			if (this.currProcess.timeRemaining == 0) {
+			if (this.currProcess.timeRemaining <= 0) {
 				finishProcess(currProcess); 
-				checkWaitQueue(); 
-				checkHoldQueues(); 
-			}else {
-				
+			}else if (time % quant == 0){
+				this.currProcess.getAjob().setCurrState(RED, time);
+				this.readyQueue.add(currProcess);
+				Process p = this.readyQueue.remove();
+				p.getAjob().setCurrState(RUN, time);
+				currProcess = p;
 				//handle switching of processes, ROUND ROBIN ALG HERE
 				
 			}

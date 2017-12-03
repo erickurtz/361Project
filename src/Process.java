@@ -56,7 +56,8 @@ public class Process implements Comparable<Process> {
 	}
 	
 	public String toString() {
-		return "Process for " + this.getAjob().toString(); 
+		return "Process for " + this.getAjob().toString() + 
+				"Time remaining: " + this.timeRemaining + ". \n "; 
 	}
 
 }
