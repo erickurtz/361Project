@@ -12,6 +12,18 @@ public class Job {
 	int currStateTime; 
 	String currState; 
 	
+	public int getCurrStateTime() {
+		return currStateTime;
+	}
+
+	public void setCurrStateTime(int currStateTime) {
+		this.currStateTime = currStateTime;
+	}
+
+	public void setCurrState(String currState) {
+		this.currState = currState;
+	}
+
 	public Job(int p, int a, int m, int d, int r, int j) {
 		
 		this.priority = p; 
@@ -86,6 +98,8 @@ public class Job {
 				currState + " at time: " + this.currStateTime + ".\n ";
 		
 	}
+
+
 
 
 } 

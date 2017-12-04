@@ -65,12 +65,11 @@ public class Simulator {
 		}
 		
 		
-		if(true) { //bankersAlg
-			int tba = theProc.getAjob().getDev() 
-					- theProc.getCurrResources(); 
-			theProc.setCurrResources( theProc.getAjob().getDev());
+		if(runBankersAlg(r)) { //bankersAlg
+			int tba = r.devReqd;
+			theProc.setCurrResources( theProc.currResources + tba);
 			this.serialDev -= tba; 
-			readyQueue.add(theProc); 
+			this.readyToCPU(); 
 		}else {
 			System.out.println("Request denied for r.tostring()");
 		}
@@ -85,28 +84,15 @@ public class Simulator {
 	//Takes in a request. Finds corresponding job based on jobNum of request. Removes resources \
 	//if job is found.
 	public void releaseDevices(Request r) {
-		Process p1 = null; 
-		if(this.currProcess != null && r.jobNumReq == this.currProcess.getAjob().getJobNum()) {
-			p1 = this.currProcess; 
-		}else { 
-			for(Process p : readyQueue) {
-				if(p.getAjob().getJobNum() == r.jobNumReq) {
-					p1 = p;
-					break; 
-				}
-			} 
-			for(Process p: deviceWaitQueue) {
-				if(p.getAjob().getJobNum() == r.jobNumReq) {
-					p1 = p;
-					break; 
-				}
-			}	
-		}
-		if(p1 != null) {
-			p1.setCurrResources(p1.currResources- r.devReqd);
-			this.serialDev+= r.devReqd;
-		}else {
-			System.out.println("Error: Process not found. Cannot Release devices");
+		
+		for(Process p : allActiveProcess) {
+			if (p.getAjob().jobNum == r.jobNumReq) {
+				p.setCurrResources(p.currResources- r.devReqd);
+				this.serialDev+= r.devReqd;
+				return;
+			}else {
+				System.out.println("Error: Process not found.");
+			}
 		}
 	}
 	
@@ -126,7 +112,7 @@ public class Simulator {
 		//NOTE: Writing as 2d arrays for "code maintainablity"
 	
 			for(int j = 0; j< max[0].length; j++) {
-				System.out.println("Row 1 Column " + j);
+
 				max[0][j] = this.allActiveProcess.get(j).getAjob().getDev(); 
 			}
 		
@@ -155,6 +141,7 @@ public class Simulator {
 				canSatisfy = true; 
 			}else {
 				canSatisfy = false; 
+				break; 
 			}
 		}
 		
@@ -177,24 +164,24 @@ public class Simulator {
 		
 		if(j.getMemReq()> this.totalMem || j.getDev() > this.totalSerDev) {
 			j.setCurrState(REJ, time);
-			System.out.println(j.toString() + "Rejected.");
+			//System.out.println(j.toString() + "Rejected.");
 		}else if (j.getMemReq() <= this.availMem) {
 			this.availMem-= j.memReq; 
 			j.setCurrState(WAIT,this.time);
 			Process p = new Process(j,time);
 			this.deviceWaitQueue.add(p); 
 			this.allActiveProcess.add(p);
-			System.out.println(j.toString() + "Added to WaitQueue.");
+			//System.out.println(j.toString() + "Added to WaitQueue.");
 			checkWaitQueue();		 
 		}else if (j.priority == P1) {
 			this.firstHoldQueue.add(j);
 			j.setCurrState(HQ1,this.time);
-			System.out.println(j.toString() + "Added to HQ1.");
+			//System.out.println(j.toString() + "Added to HQ1.");
 			
 		}else {
 			this.secondHoldQueue.add(j); 
 			j.setCurrState(HQ2,this.time);
-			System.out.println( j.toString() + "Added to HQ1.");
+			//System.out.println( j.toString() + "Added to HQ1.");
 		}
 		this.allJobs.add(j); 
 		return; 
@@ -264,7 +251,7 @@ public class Simulator {
 	
 	
 	//deallocateProcess: void -> void
-	//consumes: void 
+	//consumes: void r.devReqd)
 	//produces: void
 	public void deallocateProcess() {
 		currProcess.getAjob().setCurrState(DONE,this.time);
@@ -291,9 +278,9 @@ public class Simulator {
 		Iterator<Process> iter = deviceWaitQueue.iterator();
 		while (iter.hasNext()) {
 			Process p = iter.next();
-			System.out.println("Iterating over waitQueue. On "  + p);
+			//System.out.println("Iterating over waitQueue. On "  + p);
 			if(p.getAjob().getDev() <= this.serialDev) {
-				System.out.println("Enough devices for " +p.toString() );
+				//System.out.println("Enough devices for " +p.toString() );
 				iter.remove();
 				int diff = p.getAjob().getDev()
 						- p.getCurrResources();
@@ -301,7 +288,7 @@ public class Simulator {
 				this.serialDev-=diff; 
 				this.readyQueue.add(p);
 				p.getAjob().setCurrState(RED, this.time);
-				System.out.println(p.toString() + "added. Serial Devices left: " + this.serialDev);
+				//System.out.println(p.toString() + "added. Serial Devices left: " + this.serialDev);
 				checkCurrProcess(); 
 				
 			}
@@ -320,13 +307,8 @@ public class Simulator {
 		p.getAjob().setCurrState(DONE, this.time);
 		this.checkWaitQueue();
 		this.checkHoldQueues();
-		Process p1 = this.readyQueue.remove();
-		if(p1 == null) {
-			System.out.println("No ready processes to run");
-			this.currProcess = null; 
-		}else {
-			this.currProcess = p1; 
-		}
+		currProcess = this.readyQueue.remove(); 
+		currProcess.getAjob().setCurrState(RUN, time);
 	
 	}
 	
@@ -338,23 +320,27 @@ public class Simulator {
 
 	public void onTick() {
 		//handle internal events first
+		System.out.println("Time =" + " " + time);
 		if(this.currProcess == null && this.readyQueue.peek() != null) {
 			Process p = this.readyQueue.remove();
 			p.getAjob().setCurrState(RUN, time);
 			this.currProcess = p;
-			System.out.println("Added " + p + "to CPU.");
+			//System.out.println("Added " + p + "to CPU.");
 		}else if (this.currProcess == null) {
 			System.out.println("Nothing on Process or in Ready Queue at time " + time);
 		}else if (this.currProcess != null) {
+			//System.out.println(currProcess);
 			if (this.currProcess.timeRemaining <= 0) {
 				finishProcess(currProcess); 
-				System.out.println("Finished process: " + currProcess);
+				//System.out.println("Finished process: " + currProcess);
+				
 			}else if (time % quant == 0){
+				//System.out.println("Entered Quantum. Removing " + currProcess);
 				this.currProcess.getAjob().setCurrState(RED, time);
 				this.readyQueue.add(currProcess);
-				Process p = this.readyQueue.remove();
-				p.getAjob().setCurrState(RUN, time);
-				currProcess = p;
+				currProcess = this.readyQueue.remove();
+				currProcess.getAjob().setCurrState(RUN, time);
+				//System.out.println("added " + currProcess);
 				//handle switching of processes, ROUND ROBIN ALG HERE
 				
 			}
@@ -402,6 +388,12 @@ public class Simulator {
 				}
 			}
 			
+			for (Process p: completeQueue) {
+				if(p.getAjob().getJobNum() == j.getJobNum()) {
+					return p; 
+				}
+			}
+			
 			System.out.println("Error: Process not found, check Job State");
 			return null; 
 		}
@@ -409,12 +401,12 @@ public class Simulator {
 	}
 	
 	public int getWeightedTurnaround(Process p) {
-		return 0; //turnaround/runtime
+		return getTurnaround(p)/p.getAjob().getRunTime(); 
 	}
 	
 	public int getTurnaround(Process p) {
 		
-		return p.getTimeRemaining(); 
+		return p.getAjob().getCurrStateTime() - p.getAjob().getTime(); 
 	}
 	
 	public String printState() {
@@ -430,30 +422,35 @@ public class Simulator {
 			
 			switch (j.getCurrState()) {
 			case(HQ1): 
-				addTo = j.toString();
+				addTo = j.toString() + "Runtime: " +j.getRunTime(); 
 				break;
 			case(HQ2): 
-				addTo = j.toString();
+				addTo = j.toString() + "Runtime: " +j.getRunTime(); 
 			case(REJ): 
 				wTTime = -1; 
 				TTime = -1; 
-				addTo = j.toString();
+				addTo = j.toString()
+						+ "Turnaround: " + TTime + 
+						". Weighted Turnaround: " 
+						+ wTTime + ".\n";;
 				break; 
-			case(WAIT): 
+			case(WAIT):	
 			case(RED):
 			case(RUN): 
 				Process p = this.findProcess(j);
-				addTo = p.toString(); 
-				wTTime = getWeightedTurnaround(p);
-				TTime = getTurnaround(p); 
+				addTo = p.toString() + "Remaining time " + p.timeRemaining; 
 				break; 
 			case(DONE): 
-				addTo = j.toString(); 
-				
-				
+				Process p1 = this.findProcess(j);
+				wTTime = getWeightedTurnaround(p1);
+				TTime = getTurnaround(p1); 
+				addTo = p1.toString() 
+					+ "Turnaround: " + TTime 
+					+ ". Weighted Turnaround: " 
+					+ wTTime + ".\n"; 
+				break; 
 			}
-			tbr += addTo + "Turnaround: " + TTime + ". Weighted Turnaround: " + wTTime + ".\n"; 
-			
+			tbr += addTo ;
 		}
 		
 		
@@ -509,7 +506,8 @@ public class Simulator {
 			//BANKERS ALG?????????????
 
 			
-			break;
+			break;	
+			
 			
 		case "L":
 			int timeRel = Integer.parseInt(words[1]);

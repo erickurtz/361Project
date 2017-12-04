@@ -44,8 +44,8 @@ public class SimRunner {
 				this.parseLine(line);
 				 if(s1 != null) {
 					if(this.time <= s1.time) {
-						s1.onTick(); 
 						s1.parseInput(currLine);
+						s1.onTick(); 
 						line = bufferedReader.readLine();
 						
 					}else {
