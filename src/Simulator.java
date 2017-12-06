@@ -254,7 +254,6 @@ public class Simulator {
 	//consumes: void r.devReqd)
 	//produces: void
 	public void deallocateProcess() {
-		currProcess.getAjob().setCurrState(DONE,this.time);
 		this.availMem+= currProcess.getCurrMem(); 
 		this.serialDev+= currProcess.getCurrResources();
 	}
